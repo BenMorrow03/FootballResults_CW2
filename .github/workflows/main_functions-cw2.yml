@@ -31,3 +31,4 @@ jobs:
           app-name: "functions-cw2"
           publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
           package: "."
+
