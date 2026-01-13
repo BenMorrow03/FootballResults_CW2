@@ -2,11 +2,10 @@ name: Build and deploy Node.js project to Azure Function App
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:
-  id-token: write
   contents: read
 
 jobs:
@@ -25,22 +24,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # If you have a build step later, uncomment:
-      # - name: Build
-      #   run: npm run build --if-present
-
-      - name: Azure Login (OIDC)
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_B05CB138BE3B4EA5845E30FC208E2020 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_43BA06EE63D44538B4D66E6CABD5495F }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_FEBF8C2EC165439AABAC1DBB9A70F91C }}
-
-
+      # Deploy using Publish Profile (no Entra / OIDC required)
       - name: Deploy to Azure Functions
         uses: Azure/functions-action@v1
         with:
           app-name: "functions-cw2"
+          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
           package: "."
-
-
