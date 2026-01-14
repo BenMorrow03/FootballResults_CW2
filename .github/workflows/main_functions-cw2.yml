@@ -28,7 +28,20 @@ jobs:
         run: |
           zip -r functionapp.zip . \
             -x ".git/*" ".github/*" ".vscode/*" "**/.DS_Store" \
-               "local.settings.json"
+               "local.settings.json" \
+               "node_modules/**/.cache/*" \
+               "node_modules/**/test/*" \
+               "node_modules/**/tests/*" \
+               "node_modules/**/docs/*" \
+               "node_modules/**/example/*" \
+               "node_modules/**/examples/*" \
+               "node_modules/**/coverage/*" \
+               "node_modules/**/CHANGELOG*" \
+               "node_modules/**/LICENSE*" \
+               "node_modules/**/README*"
+
+      - name: Show package size
+        run: ls -lh functionapp.zip
 
       - name: Deploy via ZipDeploy using Publish Profile
         env:
