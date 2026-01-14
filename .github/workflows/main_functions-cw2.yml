@@ -13,26 +13,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "18"
-          cache: "npm"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --omit=dev
 
-      # Create a deployment zip that includes node_modules so Kudu doesn't need Oryx build
-      - name: Create deployment package
+      - name: Create deployment zip
         run: |
           zip -r functionapp.zip . \
             -x ".git/*" ".github/*" ".vscode/*" "**/.DS_Store" \
-               "local.settings.json" "node_modules/.cache/*"
+               "local.settings.json"
 
-      - name: Deploy to Azure Functions (ZipDeploy)
+      - name: Deploy (Run From Package)
         uses: Azure/functions-action@v1
         with:
           app-name: "functions-cw2"
