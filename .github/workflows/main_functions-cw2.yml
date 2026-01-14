@@ -13,9 +13,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
         with:
           node-version: "18"
 
@@ -28,16 +30,56 @@ jobs:
             -x ".git/*" ".github/*" ".vscode/*" "**/.DS_Store" \
                "local.settings.json"
 
-      - name: Deploy via SCM ZipDeploy (curl)
+      - name: Deploy via ZipDeploy using Publish Profile
         env:
           PUBLISH_PROFILE: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
         run: |
-          sudo apt-get update && sudo apt-get install -y xmlstarlet
-          USERNAME=$(echo "$PUBLISH_PROFILE" | xmlstarlet sel -t -v "//publishProfile[@publishMethod='ZipDeploy']/@userName")
-          PASSWORD=$(echo "$PUBLISH_PROFILE" | xmlstarlet sel -t -v "//publishProfile[@publishMethod='ZipDeploy']/@userPWD")
-          PUBLISH_URL=$(echo "$PUBLISH_PROFILE" | xmlstarlet sel -t -v "//publishProfile[@publishMethod='ZipDeploy']/@publishUrl")
+          set -e
+
+          python3 <<EOF
+          import os, sys, xml.etree.ElementTree as ET
+
+          xml_text = os.environ.get("PUBLISH_PROFILE", "").strip()
+          if not xml_text:
+              print("Publish profile is empty")
+              sys.exit(1)
+
+          root = ET.fromstring(xml_text)
+
+          prof = None
+          for p in root.findall(".//publishProfile"):
+              if p.attrib.get("publishMethod") == "ZipDeploy":
+                  prof = p
+                  break
+
+          if prof is None:
+              print("No ZipDeploy profile found")
+              sys.exit(1)
+
+          username = prof.attrib.get("userName", "")
+          password = prof.attrib.get("userPWD", "")
+          publish_url = prof.attrib.get("publishUrl", "")
+
+          print("ZipDeploy publishUrl:", publish_url)
+          print("ZipDeploy userName:", username)
+          print("Password length:", len(password))
+
+          if not username or not password or not publish_url:
+              print("Missing values in publish profile")
+              sys.exit(1)
+
+          with open("vars.sh", "w") as f:
+              f.write(f'USERNAME="{username}"\\n')
+              f.write(f'PASSWORD="{password}"\\n')
+              f.write(f'PUBLISH_URL="{publish_url}"\\n')
+          EOF
+
+          source vars.sh
+
+          DEPLOY_URL="https://${PUBLISH_URL}/api/zipdeploy?isAsync=true"
+          echo "Deploying to $DEPLOY_URL"
+
           curl -X POST -u "$USERNAME:$PASSWORD" \
-            --fail --silent --show-error \
             -H "Content-Type: application/zip" \
             --data-binary @functionapp.zip \
-            "https://$PUBLISH_URL/api/zipdeploy?isAsync=true"
+            "$DEPLOY_URL"
