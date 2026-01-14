@@ -1,29 +1,33 @@
+const { app } = require("@azure/functions");
 const { CosmosClient } = require("@azure/cosmos");
 
-module.exports = async function (context, req) {
-  try {
-    const connStr = process.env.Cosmos_connection_string;
-    if (!connStr) {
-      context.res = { status: 500, body: { error: "Missing Cosmos_connection_string" } };
-      return;
+app.http("DeleteMedia", {
+  methods: ["DELETE"],
+  authLevel: "anonymous",
+  handler: async (request, context) => {
+    try {
+      const connStr = process.env.Cosmos_connection_string;
+      if (!connStr) {
+        return { status: 500, jsonBody: { error: "Missing Cosmos_connection_string" } };
+      }
+
+      const id = request.query.get("id");
+      const teamId = request.query.get("teamId");
+
+      if (!id || !teamId) {
+        return { status: 400, jsonBody: { error: "id and teamId are required" } };
+      }
+
+      const client = new CosmosClient(connStr);
+      const container = client.database("footballresultsdbcon").container("mediameta");
+
+      await container.item(id, teamId).delete();
+
+      // 204 means "deleted, no content to return"
+      return { status: 204 };
+    } catch (err) {
+      context.log.error("Error deleting media:", err);
+      return { status: 500, jsonBody: { error: err.message } };
     }
-
-    const id = req.query.id;
-    const teamId = req.query.teamId;
-
-    if (!id || !teamId) {
-      context.res = { status: 400, body: { error: "id and teamId are required" } };
-      return;
-    }
-
-    const client = new CosmosClient(connStr);
-    const container = client.database("footballresultsdbcon").container("mediameta");
-
-    await container.item(id, teamId).delete();
-
-    context.res = { status: 204 };
-  } catch (err) {
-    context.log.error(err);
-    context.res = { status: 500, body: { error: err.message } };
   }
-};
+});
