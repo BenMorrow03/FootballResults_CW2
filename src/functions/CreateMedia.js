@@ -8,14 +8,10 @@ app.http("CreateMedia", {
   handler: async (request, context) => {
     try {
       const connStr = process.env.Cosmos_connection_string;
-      if (!connStr) {
-        return { status: 500, jsonBody: { error: "Missing Cosmos_connection_string" } };
-      }
+      if (!connStr) return { status: 500, jsonBody: { error: "Missing Cosmos_connection_string" } };
 
       const body = await request.json().catch(() => ({}));
-      if (!body.teamId) {
-        return { status: 400, jsonBody: { error: "teamId is required" } };
-      }
+      if (!body.teamId) return { status: 400, jsonBody: { error: "teamId is required" } };
 
       const client = new CosmosClient(connStr);
       const container = client.database("footballresultsdbcon").container("mediameta");
@@ -32,7 +28,6 @@ app.http("CreateMedia", {
       };
 
       await container.items.create(item);
-
       return { status: 201, jsonBody: item };
     } catch (err) {
       context.log.error(err);
