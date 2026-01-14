@@ -23,7 +23,6 @@ app.http("DeleteMedia", {
 
       await container.item(id, teamId).delete();
 
-      // 204 means "deleted, no content to return"
       return { status: 204 };
     } catch (err) {
       context.log.error("Error deleting media:", err);
@@ -31,3 +30,4 @@ app.http("DeleteMedia", {
     }
   }
 });
+
