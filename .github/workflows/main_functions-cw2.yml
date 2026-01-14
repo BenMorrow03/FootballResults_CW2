@@ -28,9 +28,16 @@ jobs:
             -x ".git/*" ".github/*" ".vscode/*" "**/.DS_Store" \
                "local.settings.json"
 
-      - name: Deploy (Run From Package)
-        uses: Azure/functions-action@v1
-        with:
-          app-name: "functions-cw2"
-          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
-          package: functionapp.zip
+      - name: Deploy via SCM ZipDeploy (curl)
+        env:
+          PUBLISH_PROFILE: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+        run: |
+          sudo apt-get update && sudo apt-get install -y xmlstarlet
+          USERNAME=$(echo "$PUBLISH_PROFILE" | xmlstarlet sel -t -v "//publishProfile[@publishMethod='ZipDeploy']/@userName")
+          PASSWORD=$(echo "$PUBLISH_PROFILE" | xmlstarlet sel -t -v "//publishProfile[@publishMethod='ZipDeploy']/@userPWD")
+          PUBLISH_URL=$(echo "$PUBLISH_PROFILE" | xmlstarlet sel -t -v "//publishProfile[@publishMethod='ZipDeploy']/@publishUrl")
+          curl -X POST -u "$USERNAME:$PASSWORD" \
+            --fail --silent --show-error \
+            -H "Content-Type: application/zip" \
+            --data-binary @functionapp.zip \
+            "https://$PUBLISH_URL/api/zipdeploy?isAsync=true"
