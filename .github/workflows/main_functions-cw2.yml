@@ -24,21 +24,12 @@ jobs:
       - name: Install dependencies
         run: npm ci --omit=dev
 
-      - name: Create deployment zip
+      - name: Create deployment zip (no node_modules)
         run: |
           zip -r functionapp.zip . \
             -x ".git/*" ".github/*" ".vscode/*" "**/.DS_Store" \
                "local.settings.json" \
-               "node_modules/**/.cache/*" \
-               "node_modules/**/test/*" \
-               "node_modules/**/tests/*" \
-               "node_modules/**/docs/*" \
-               "node_modules/**/example/*" \
-               "node_modules/**/examples/*" \
-               "node_modules/**/coverage/*" \
-               "node_modules/**/CHANGELOG*" \
-               "node_modules/**/LICENSE*" \
-               "node_modules/**/README*"
+               "node_modules/*"
 
       - name: Show package size
         run: ls -lh functionapp.zip
@@ -92,7 +83,13 @@ jobs:
           DEPLOY_URL="https://${PUBLISH_URL}/api/zipdeploy?isAsync=true"
           echo "Deploying to $DEPLOY_URL"
 
-          curl -X POST -u "$USERNAME:$PASSWORD" \
-            -H "Content-Type: application/zip" \
-            --data-binary @functionapp.zip \
-            "$DEPLOY_URL"
+          for i in 1 2 3; do
+            echo "ZipDeploy attempt $i..."
+            curl -X POST -u "$USERNAME:$PASSWORD" \
+              --fail --silent --show-error \
+              -H "Content-Type: application/zip" \
+              --data-binary @functionapp.zip \
+              "$DEPLOY_URL" && break
+            echo "Attempt $i failed. Sleeping 20s..."
+            sleep 20
+          done
