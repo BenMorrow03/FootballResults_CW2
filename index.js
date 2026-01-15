@@ -1,1 +1,2 @@
-console.log("Initial commit for Azure Functions project");
+const { app } = require('@azure/functions');
+
