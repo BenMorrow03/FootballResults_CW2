@@ -1,7 +1,7 @@
 {
   "name": "footballresults-cw2",
   "version": "1.0.0",
-  "main": "src/index.js",
+  "main": "index.js",
   "scripts": {
     "start": "func start"
   },
