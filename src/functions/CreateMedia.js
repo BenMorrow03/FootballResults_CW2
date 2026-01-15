@@ -5,7 +5,7 @@ const crypto = require("crypto");
 app.http("CreateMedia", {
   methods: ["POST"],
   authLevel: "anonymous",
-  handler: async (request, context) => {
+  handler: async (req, context) => {
     try {
       const connStr = process.env.Cosmos_connection_string;
 
@@ -13,15 +13,18 @@ app.http("CreateMedia", {
         return {
           status: 500,
           jsonBody: {
-            error: "Cosmos DB connection string missing. Set app setting 'Cosmos_connection_string'."
+            error: "Missing Cosmos_connection_string in app settings"
           }
         };
       }
 
-      const body = await request.json();
+      const body = await req.json();
 
       if (!body.teamId) {
-        return { status: 400, jsonBody: { error: "teamId is required" } };
+        return {
+          status: 400,
+          jsonBody: { error: "teamId is required" }
+        };
       }
 
       const client = new CosmosClient(connStr);
@@ -46,8 +49,9 @@ app.http("CreateMedia", {
         status: 201,
         jsonBody: item
       };
+
     } catch (err) {
-      context.error("CreateMedia error:", err);
+      context.error("CreateMedia failed:", err);
       return {
         status: 500,
         jsonBody: { error: err.message }
