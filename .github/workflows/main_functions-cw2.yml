@@ -29,7 +29,6 @@ jobs:
           zip -r functionapp.zip . \
             -x ".git/*" ".github/*" ".vscode/*" "**/.DS_Store" \
                "local.settings.json" \
-               "node_modules/*"
 
       - name: Show package size
         run: ls -lh functionapp.zip
@@ -97,3 +96,4 @@ jobs:
             echo "Attempt $i failed. Sleeping 20s..."
             sleep 20
           done
+
