@@ -19,9 +19,9 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "20"
 
-      - name: Install dependencies
+      - name: Install dependencies (for validation only)
         run: npm ci --omit=dev
 
       - name: Create deployment zip (no node_modules)
@@ -40,7 +40,7 @@ jobs:
         run: |
           set -e
 
-          python3 <<EOF
+          python3 <<'EOF'
           import os, sys, xml.etree.ElementTree as ET
 
           xml_text = os.environ.get("PUBLISH_PROFILE", "").strip()
@@ -64,23 +64,27 @@ jobs:
           password = prof.attrib.get("userPWD", "")
           publish_url = prof.attrib.get("publishUrl", "")
 
-          print("ZipDeploy publishUrl:", publish_url)
-          print("ZipDeploy userName:", username)
-          print("Password length:", len(password))
-
           if not username or not password or not publish_url:
               print("Missing values in publish profile")
               sys.exit(1)
 
           with open("vars.sh", "w") as f:
-              f.write(f'USERNAME="{username}"\\n')
-              f.write(f'PASSWORD="{password}"\\n')
-              f.write(f'PUBLISH_URL="{publish_url}"\\n')
+              f.write(f'USERNAME="{username}"\n')
+              f.write(f'PASSWORD="{password}"\n')
+              f.write(f'PUBLISH_URL="{publish_url}"\n')
           EOF
 
           source vars.sh
 
-          DEPLOY_URL="https://${PUBLISH_URL}/api/zipdeploy?isAsync=true"
+          KUDU="https://${PUBLISH_URL}"
+
+          echo "Enabling remote build (Oryx) on Kudu..."
+          curl -sS -u "$USERNAME:$PASSWORD" \
+            -H "Content-Type: application/json" \
+            -X POST "${KUDU}/api/settings" \
+            -d '{"SCM_DO_BUILD_DURING_DEPLOYMENT":"true","ENABLE_ORYX_BUILD":"true"}'
+
+          DEPLOY_URL="${KUDU}/api/zipdeploy?isAsync=true"
           echo "Deploying to $DEPLOY_URL"
 
           for i in 1 2 3; do
