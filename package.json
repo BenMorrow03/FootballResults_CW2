@@ -1,17 +1,12 @@
 {
-  "name": "",
+  "name": "footballresults-cw2",
   "version": "1.0.0",
-  "description": "",
   "main": "src/index.js",
   "scripts": {
-    "start": "func start",
-    "test": "echo \"No tests yet...\""
+    "start": "func start"
   },
   "dependencies": {
     "@azure/cosmos": "^4.9.0",
-    "@azure/functions": "^4.11.0"
-  },
-  "devDependencies": {
-    "azure-functions-core-tools": "^4.x"
+    "@azure/functions": "^4.0.0"
   }
 }
