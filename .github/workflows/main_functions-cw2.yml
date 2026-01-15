@@ -24,13 +24,12 @@ jobs:
       - name: Install dependencies (for validation only)
         run: npm ci --omit=dev
 
-      - name: Create deployment zip (no node_modules)
+      - name: Create deployment zip (WITH node_modules)
         run: |
-          rm -f functionapp.zip
           zip -r functionapp.zip . \
             -x ".git/*" ".github/*" ".vscode/*" "**/.DS_Store" \
-               "local.settings.json" \
-               "node_modules/**"
+               "local.settings.json"
+
 
       - name: Show package size
         run: ls -lh functionapp.zip
@@ -103,3 +102,4 @@ jobs:
             echo "Attempt $i failed. Sleeping 20s..."
             sleep 20
           done
+
