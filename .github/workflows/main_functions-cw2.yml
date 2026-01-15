@@ -26,9 +26,11 @@ jobs:
 
       - name: Create deployment zip (no node_modules)
         run: |
+          rm -f functionapp.zip
           zip -r functionapp.zip . \
             -x ".git/*" ".github/*" ".vscode/*" "**/.DS_Store" \
                "local.settings.json" \
+               "node_modules/**"
 
       - name: Show package size
         run: ls -lh functionapp.zip
@@ -77,13 +79,18 @@ jobs:
 
           KUDU="https://${PUBLISH_URL}"
 
-          echo "Enabling remote build (Oryx) on Kudu..."
+          echo "Setting App Settings on Kudu..."
           curl -sS -u "$USERNAME:$PASSWORD" \
             -H "Content-Type: application/json" \
             -X POST "${KUDU}/api/settings" \
-            -d '{"SCM_DO_BUILD_DURING_DEPLOYMENT":"true","ENABLE_ORYX_BUILD":"true"}'
+            -d '{
+              "SCM_DO_BUILD_DURING_DEPLOYMENT":"true",
+              "ENABLE_ORYX_BUILD":"true",
+              "WEBSITE_RUN_FROM_PACKAGE":"0",
+              "AzureWebJobsFeatureFlags":"EnableWorkerIndexing"
+            }'
 
-          DEPLOY_URL="${KUDU}/api/zipdeploy?isAsync=true"
+          DEPLOY_URL="${KUDU}/api/zipdeploy?isAsync=true&isSync=true"
           echo "Deploying to $DEPLOY_URL"
 
           for i in 1 2 3; do
@@ -96,4 +103,3 @@ jobs:
             echo "Attempt $i failed. Sleeping 20s..."
             sleep 20
           done
-
